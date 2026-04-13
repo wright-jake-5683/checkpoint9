@@ -7,6 +7,7 @@
 #include "laser_manager.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include <nav_msgs/msg/odometry.hpp> 
+#include "rpy.hpp"
 
 
 class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
@@ -77,6 +78,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         std::shared_ptr<OdomManager> odom_helper_;
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
+        bool destination_reached_;
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
@@ -84,18 +86,33 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             if (front_laser_reading < .75)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
+                destination_reached_ = true;
+                RCLCPP_INFO(this->get_logger(), "reached: %d", destination_reached_);
             }
             else 
             {
                 diff_drive_helper_->publish_cmd_vel(1.0, 0.0);
-                RCLCPP_INFO(this->get_logger(), "Front Laser Reading: %.2f", front_laser_reading);
+                destination_reached_ = false;
 
+                //RCLCPP_INFO(this->get_logger(), "Front Laser Reading: %.2f", front_laser_reading);
             }
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
         {
-        
+            RPY rpy = odom_helper_->get_rpl(msg);
+            RCLCPP_INFO(this->get_logger(), "Yaw: %.2f", rpy.yaw);
+            if (rpy.yaw > -1.56 && destination_reached_)
+            {
+                diff_drive_helper_->publish_cmd_vel(0.0, 0.75);
+                RCLCPP_INFO(this->get_logger(), "Hit 1");
+            }
+            else if (rpy.yaw <= -1.56 && destination_reached_)
+            {
+                diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
+                RCLCPP_INFO(this->get_logger(), "Hit 2");
+            }
+            else {}
         }
 };
 

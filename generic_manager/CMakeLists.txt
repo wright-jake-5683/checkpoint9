@@ -12,6 +12,7 @@ find_package(geometry_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
+find_package(tf2 REQUIRED)
 
 # =========================
 # diff_drive_manager
@@ -62,6 +63,7 @@ ament_target_dependencies(odom_manager
   rclcpp
   nav_msgs
   rclcpp_lifecycle
+  tf2
 )
 
 target_include_directories(odom_manager
