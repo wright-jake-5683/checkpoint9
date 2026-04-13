@@ -1,10 +1,14 @@
 #include "laser_manager.hpp"
 
-LaserManager::LaserManager() {}
+LaserManager::LaserManager()
+{}
 
 float LaserManager::read_front_laser(const sensor_msgs::msg::LaserScan::SharedPtr msg)
 {
-    int middle_index = std::round(std::size(msg->ranges) / 2);
+    if (msg->ranges.empty()) {
+          throw std::runtime_error("No laser data received yet");
+    }
+
+    int middle_index = std::round(msg->ranges.size() / 2);
     return msg->ranges[middle_index];
 }
-

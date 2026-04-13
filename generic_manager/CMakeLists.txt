@@ -11,6 +11,7 @@ find_package(rclcpp REQUIRED)
 find_package(geometry_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
+find_package(nav_msgs REQUIRED)
 
 # =========================
 # diff_drive_manager
@@ -41,9 +42,29 @@ add_library(laser_manager
 ament_target_dependencies(laser_manager
   rclcpp
   sensor_msgs
+  rclcpp_lifecycle
 )
 
 target_include_directories(laser_manager
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# =========================
+# odom_manager
+# =========================
+add_library(odom_manager
+  src/odom_manager.cpp
+)
+
+ament_target_dependencies(odom_manager
+  rclcpp
+  nav_msgs
+  rclcpp_lifecycle
+)
+
+target_include_directories(odom_manager
   PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
@@ -55,6 +76,7 @@ target_include_directories(laser_manager
 install(TARGETS
   diff_drive_manager
   laser_manager
+  odom_manager
   EXPORT export_generic_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
