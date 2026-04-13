@@ -13,6 +13,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
+find_package(lifecycle_msgs REQUIRED)
 
 # =========================
 # diff_drive_manager
@@ -73,12 +74,32 @@ target_include_directories(odom_manager
 )
 
 # =========================
+# lifecycle_manager
+# =========================
+add_library(lifecycle_manager
+  src/lifecycle_manager.cpp
+)
+
+ament_target_dependencies(lifecycle_manager
+  rclcpp
+  rclcpp_lifecycle
+  lifecycle_msgs
+)
+
+target_include_directories(lifecycle_manager
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# =========================
 # install libraries
 # =========================
 install(TARGETS
   diff_drive_manager
   laser_manager
   odom_manager
+  lifecycle_manager
   EXPORT export_generic_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

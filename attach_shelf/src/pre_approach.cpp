@@ -42,6 +42,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         on_activate(const rclcpp_lifecycle::State &)
         {
             diff_drive_helper_->change_publisher_state(1);
+            bool task_complete = to_go_position();
             return rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface::CallbackReturn::SUCCESS;
         }
         
@@ -79,39 +80,35 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
         bool destination_reached_;
+        float front_laser_reading_;
+        RPY rpy_;
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
-            bool pub_status = diff_drive_helper_->check_publisher_status();
-            float front_laser_reading = laser_helper_->read_front_laser(msg);
-
-            if (front_laser_reading < .75 && !destination_reached_ && pub_status)
-            {
-                diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
-                destination_reached_ = true;
-            }
-            else if (!destination_reached_ && pub_status)
-            {
-                diff_drive_helper_->publish_cmd_vel(1.0, 0.0);
-                destination_reached_ = false;
-            }
+            front_laser_reading_ = laser_helper_->read_front_laser(msg);
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
         {
-            bool pub_status = diff_drive_helper_->check_publisher_status();
-            RPY rpy = odom_helper_->get_rpl(msg);
+            rpy_ = odom_helper_->get_rpy(msg);
+        }
 
-            if (rpy.yaw > -1.56 && destination_reached_ && pub_status)
+        bool to_go_position()
+        {
+            while (front_laser_reading_ < .75)
+            {
+                diff_drive_helper_->publish_cmd_vel(1.0, 0.0);
+            }
+            diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
+
+
+            while (rpy_.yaw > -1.56)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, -0.2);
             }
-            else if (rpy.yaw <= -1.56 && destination_reached_ && pub_status)
-            {
-                diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
-            }
-            else {}
-        }
+            diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
+            return true;
+        };
 };
 
 int main(int argc, char *argv[])

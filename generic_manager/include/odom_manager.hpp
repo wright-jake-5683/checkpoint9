@@ -10,5 +10,5 @@ class OdomManager
 public:
     OdomManager();
 
-    RPY get_rpl(const nav_msgs::msg::Odometry::SharedPtr msg);
+    RPY get_rpy(const nav_msgs::msg::Odometry::SharedPtr msg);
 };

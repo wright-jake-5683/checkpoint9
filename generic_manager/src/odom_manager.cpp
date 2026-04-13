@@ -3,7 +3,7 @@
 OdomManager::OdomManager() 
 {}
 
-RPY OdomManager::get_rpl(const nav_msgs::msg::Odometry::SharedPtr msg)
+RPY OdomManager::get_rpy(const nav_msgs::msg::Odometry::SharedPtr msg)
 {
         RPY rpy;
         // --- Convert orientations ---
