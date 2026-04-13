@@ -82,35 +82,33 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
+            bool pub_status = diff_drive_helper_->check_publisher_status();
             float front_laser_reading = laser_helper_->read_front_laser(msg);
-            if (front_laser_reading < .75)
+
+            if (front_laser_reading < .75 && !destination_reached_ && pub_status)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
                 destination_reached_ = true;
-                RCLCPP_INFO(this->get_logger(), "reached: %d", destination_reached_);
             }
-            else 
+            else if (!destination_reached_ && pub_status)
             {
                 diff_drive_helper_->publish_cmd_vel(1.0, 0.0);
                 destination_reached_ = false;
-
-                //RCLCPP_INFO(this->get_logger(), "Front Laser Reading: %.2f", front_laser_reading);
             }
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
         {
+            bool pub_status = diff_drive_helper_->check_publisher_status();
             RPY rpy = odom_helper_->get_rpl(msg);
-            RCLCPP_INFO(this->get_logger(), "Yaw: %.2f", rpy.yaw);
-            if (rpy.yaw > -1.56 && destination_reached_)
+
+            if (rpy.yaw > -1.56 && destination_reached_ && pub_status)
             {
-                diff_drive_helper_->publish_cmd_vel(0.0, 0.75);
-                RCLCPP_INFO(this->get_logger(), "Hit 1");
+                diff_drive_helper_->publish_cmd_vel(0.0, -0.2);
             }
-            else if (rpy.yaw <= -1.56 && destination_reached_)
+            else if (rpy.yaw <= -1.56 && destination_reached_ && pub_status)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
-                RCLCPP_INFO(this->get_logger(), "Hit 2");
             }
             else {}
         }

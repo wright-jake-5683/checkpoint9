@@ -12,6 +12,8 @@ public:
     void publish_cmd_vel(float linear_x, float angular_z);
 
     void change_publisher_state(const int &state);
+
+    bool check_publisher_status();
 private:
     rclcpp_lifecycle::LifecycleNode::SharedPtr node_;
     rclcpp_lifecycle::LifecyclePublisher<geometry_msgs::msg::Twist>::SharedPtr pub_;

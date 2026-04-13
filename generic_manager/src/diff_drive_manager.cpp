@@ -29,3 +29,15 @@ void DiffDriveManager::change_publisher_state(const int &state)
             pub_.reset();
     }
 }
+
+bool DiffDriveManager::check_publisher_status()
+{
+    if (pub_->is_activated())
+    {
+        return true;
+    }
+    else 
+    {
+        return false;
+    }
+}
