@@ -14,7 +14,7 @@ class MyLifecycleServiceClient
 public:
     MyLifecycleServiceClient(rclcpp_lifecycle::LifecycleNode::SharedPtr node);
 
-    bool change_state(std::string &state);
+    bool change_state(std::string state);
 
     std::shared_ptr<lifecycle_msgs::msg::State> get_state();
 

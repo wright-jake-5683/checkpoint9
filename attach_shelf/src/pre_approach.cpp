@@ -11,6 +11,7 @@
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include <nav_msgs/msg/odometry.hpp> 
 #include "rpy.hpp"
+#include "lifecycle_manager.hpp"
 
 using rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
 using namespace std::chrono_literals;
@@ -51,6 +52,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                 odom_options
             );
 
+            lifecycle_manager_ = std::make_shared<MyLifecycleServiceClient>(shared_from_this());
             laser_helper_ = std::make_shared<LaserManager>();
             odom_helper_ = std::make_shared<OdomManager>();
             diff_drive_helper_ = std::make_shared<DiffDriveManager>(shared_from_this(), "/diffbot_base_controller/cmd_vel_unstamped");
@@ -70,18 +72,22 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         CallbackReturn on_deactivate(const rclcpp_lifecycle::State &)
         {
             diff_drive_helper_->change_publisher_state(2);
+            timer_.reset();
             return CallbackReturn::SUCCESS;
         }
         
         CallbackReturn on_cleanup(const rclcpp_lifecycle::State &)
         {
             diff_drive_helper_->change_publisher_state(3);
+            timer_.reset();
             return CallbackReturn::SUCCESS;
         }
         
         CallbackReturn on_shutdown(const rclcpp_lifecycle::State &)
         {
             diff_drive_helper_->change_publisher_state(3);
+            timer_.reset();
+            RCLCPP_INFO(this->get_logger(), "%s shutting down...", this->get_name());
             return CallbackReturn::SUCCESS;
         }
         
@@ -91,24 +97,25 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         }
         
     private:
+        std::shared_ptr<MyLifecycleServiceClient> lifecycle_manager_;
         std::shared_ptr<DiffDriveManager> diff_drive_helper_;
         std::shared_ptr<LaserManager> laser_helper_;
         std::shared_ptr<OdomManager> odom_helper_;
         rclcpp::Subscription<sensor_msgs::msg::LaserScan>::SharedPtr laser_sub_;
         rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr odom_sub_;
-        bool destination_reached_ = false;
-        float front_laser_reading_;
-        RPY rpy_;
         std::shared_ptr<rclcpp::TimerBase> timer_;
-        bool in_position_ = false;
         rclcpp::CallbackGroup::SharedPtr callback_group_laser_;
         rclcpp::CallbackGroup::SharedPtr callback_group_odom_;
         rclcpp::CallbackGroup::SharedPtr callback_group_timer_;
+        bool destination_reached_ = false;
+        bool target_angle_reached_ = false;
+        float front_laser_reading_;
+        RPY rpy_;
+        bool in_position_ = false;
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
             front_laser_reading_ = laser_helper_->read_front_laser(msg);
-            //RCLCPP_INFO(this->get_logger(), "front laser: %.2f", front_laser_reading_);
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -116,31 +123,27 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             rpy_ = odom_helper_->get_rpy(msg);
         }
 
-        bool to_go_position()
+        void to_go_position()
         {   
             while (front_laser_reading_ > .3 && !destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.5, 0.0);
-                //RCLCPP_INFO(this->get_logger(), "2: %.2f", front_laser_reading_);
             }
             diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
-            RCLCPP_INFO(this->get_logger(), "Stop 1");
             destination_reached_ = true;
 
             
             while (rpy_.yaw > -1.56 && destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, -0.2);
-                RCLCPP_INFO(this->get_logger(), "Yaw: %.2f", rpy_.yaw);
             }
             diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
-            RCLCPP_INFO(this->get_logger(), "Stop 2");
 
-            in_position_ = true;
-            
-            return true;
+            RCLCPP_INFO(this->get_logger(), "Task Complete");
 
-        };
+            lifecycle_manager_->change_state("shutdown");
+            rclcpp::shutdown();
+        }
 };
 
 int main(int argc, char *argv[])

@@ -30,11 +30,11 @@
         }
 
         if (future_status == std::future_status::ready) {
-            RCUTILS_LOG_INFO_NAMED(node_->get_name(), "Successfully retrieved lifecycle state on service: %s: ",client_get_state_->get_service_name());
-            
             auto state = std::make_shared<lifecycle_msgs::msg::State>();
-            state->id = future_result.get()->current_state.id;
-            state->label = future_result.get()->current_state.label;
+            auto result = future_result.get();
+            state->id = result->current_state.id;
+            state->label = result->current_state.label;
+            RCUTILS_LOG_INFO_NAMED(node_->get_name(), "Successfully retrieved state, %s, on service: %s ", state->label.c_str(), client_get_state_->get_service_name());
             return state;
         } 
         else 
@@ -44,7 +44,7 @@
         }
     }
 
-    bool MyLifecycleServiceClient::change_state(std::string &state)
+    bool MyLifecycleServiceClient::change_state(std::string state)
     {
         auto current_state = get_state();
         if (!current_state)
@@ -57,8 +57,6 @@
         {
             x = tolower(x);
         }
-        
-        RCUTILS_LOG_INFO_NAMED(node_->get_name(), "state: %s", state.c_str());
 
         if (state == "configure" && current_state->label == "unconfigured")
         {
