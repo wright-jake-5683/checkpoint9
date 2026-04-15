@@ -18,12 +18,14 @@ using namespace std::chrono_literals;
 
 class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
     public:
-        explicit PreApproachNode(const std::string &node_name, bool intra_process_comms = false)
-        : rclcpp_lifecycle::LifecycleNode(node_name, rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms))
+        explicit PreApproachNode(char **argv, const std::string &node_name, bool intra_process_comms = false)
+        : rclcpp_lifecycle::LifecycleNode(node_name, rclcpp::NodeOptions().use_intra_process_comms(intra_process_comms)), argv_(argv)
         {}
 
         CallbackReturn on_configure(const rclcpp_lifecycle::State &)
         {
+            argument_parsing();
+
             callback_group_laser_ = this->create_callback_group(
                 rclcpp::CallbackGroupType::MutuallyExclusive);
             
@@ -97,6 +99,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         }
         
     private:
+        char **argv_;
         std::shared_ptr<MyLifecycleServiceClient> lifecycle_manager_;
         std::shared_ptr<DiffDriveManager> diff_drive_helper_;
         std::shared_ptr<LaserManager> laser_helper_;
@@ -107,11 +110,20 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         rclcpp::CallbackGroup::SharedPtr callback_group_laser_;
         rclcpp::CallbackGroup::SharedPtr callback_group_odom_;
         rclcpp::CallbackGroup::SharedPtr callback_group_timer_;
+        float obstacle_;
+        float degrees_;
         bool destination_reached_ = false;
-        bool target_angle_reached_ = false;
         float front_laser_reading_;
         RPY rpy_;
         bool in_position_ = false;
+
+        void argument_parsing()
+        {
+            obstacle_ = std::stof(argv_[2]);
+            degrees_ = std::stof(argv_[4]);
+            RCLCPP_INFO(this->get_logger(), "Obstacle_ = %.2f", obstacle_);
+            RCLCPP_INFO(this->get_logger(), "Degrees_ = %.2f", degrees_);
+        }
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
@@ -125,15 +137,16 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         void to_go_position()
         {   
-            while (front_laser_reading_ > .3 && !destination_reached_)
+            while (front_laser_reading_ > obstacle_ && !destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.5, 0.0);
             }
             diff_drive_helper_->publish_cmd_vel(0.0, 0.0);
             destination_reached_ = true;
 
-            
-            while (rpy_.yaw > -1.56 && destination_reached_)
+            float target_angle = odom_helper_->convert_degrees_to_radians(degrees_);
+            target_angle = odom_helper_->normalize_angle(target_angle);
+            while (rpy_.yaw > target_angle && destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.0, -0.2);
             }
@@ -153,7 +166,7 @@ int main(int argc, char *argv[])
     rclcpp::executors::MultiThreadedExecutor exe;
 
     std::shared_ptr<PreApproachNode> node = 
-        std::make_shared<PreApproachNode>("pre_approach_node");
+        std::make_shared<PreApproachNode>(argv, "pre_approach_node");
 
     exe.add_node(node->get_node_base_interface());
 

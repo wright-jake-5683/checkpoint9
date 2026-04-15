@@ -1,0 +1,22 @@
+<launch>
+
+    <arg name="obstacle" default="0.3"/>
+    <arg name="degrees" default="-90.0"/>
+    <arg name="rviz_config_file_name" default="launch_part.rviz"/>
+    <arg name="custom_namespace" default="rb1_pre_approach"/>
+
+
+    <include file="$(find-pkg-share attach_shelf)/launch/start_rviz_with_arguments.launch.py">
+        <arg name="rviz_config_file_name" value="$(var rviz_config_file_name)"/>
+    </include>
+
+
+    <group>
+        <push-ros-namespace namespace="$(var custom_namespace)"/>
+        <include file="$(find-pkg-share attach_shelf)/launch/start_lifecycle_node.launch.py">
+            <arg name="obstacle" value="$(var obstacle)"/>
+            <arg name="degrees" value="$(var degrees)"/>
+        </include>
+  </group>
+
+</launch>
