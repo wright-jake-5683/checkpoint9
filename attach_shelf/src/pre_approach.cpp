@@ -121,8 +121,6 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         {
             obstacle_ = std::stof(argv_[2]);
             degrees_ = std::stof(argv_[4]);
-            RCLCPP_INFO(this->get_logger(), "Obstacle_ = %.2f", obstacle_);
-            RCLCPP_INFO(this->get_logger(), "Degrees_ = %.2f", degrees_);
         }
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
