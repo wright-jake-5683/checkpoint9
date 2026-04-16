@@ -20,20 +20,15 @@ def generate_launch_description():
         "degrees", default_value=TextSubstitution(text="-90.0")
     )
 
-    namespace_arg = DeclareLaunchArgument(
-        "custom_namespace", default_value=""
-    )
-
     obstacle_f = LaunchConfiguration('obstacle')
     degrees_f = LaunchConfiguration('degrees')
-    namespace_f = LaunchConfiguration('custom_namespace')
 
 
     lifecycle_node = LifecycleNode(
         package='attach_shelf',
         executable='pre_approach',
         name='pre_approach_node',
-        namespace=namespace_f,
+        namespace='',
         output='screen',
         arguments=["-obstacle", obstacle_f, 
                    "-degrees", degrees_f
@@ -74,7 +69,6 @@ def generate_launch_description():
     return LaunchDescription([
         obstacle_arg,
         degrees_arg,
-        namespace_arg,
         lifecycle_node,
         configure_event,
         configured_message,
