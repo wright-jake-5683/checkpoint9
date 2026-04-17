@@ -67,7 +67,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         {
             diff_drive_helper_->change_publisher_state(1);
             
-            //timer_ = this->create_wall_timer(50ms, std::bind(&PreApproachNode::to_go_position, this), callback_group_timer_);
+            timer_ = this->create_wall_timer(50ms, std::bind(&PreApproachNode::to_go_position, this), callback_group_timer_);
         
 
             return CallbackReturn::SUCCESS;
@@ -128,13 +128,6 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
             front_laser_reading_ = laser_helper_->read_front_laser(msg);
-            for (size_t i=0; i < msg->intensities.size(); i++)
-            {
-                if (msg->intensities[i] > 0)
-                {
-                    RCLCPP_INFO(this->get_logger(), "i: %zu -- value: %.2f", i, msg->intensities[i]);
-                }
-            }
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
