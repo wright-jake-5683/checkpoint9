@@ -11,7 +11,7 @@
 
 
     <group>
-        <include file="$(find-pkg-share attach_shelf)/launch/start_lifecycle_node.launch.py">
+        <include file="$(find-pkg-share attach_shelf)/launch/start_pre_approach_node.launch.py">
             <arg name="obstacle" value="$(var obstacle)"/>
             <arg name="degrees" value="$(var degrees)"/>
         </include>

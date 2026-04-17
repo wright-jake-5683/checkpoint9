@@ -137,6 +137,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         void to_go_position()
         {   
+            this->timer_->cancel();
             while (front_laser_reading_ > obstacle_ && !destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.5, 0.0);

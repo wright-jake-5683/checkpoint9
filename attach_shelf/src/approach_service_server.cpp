@@ -46,6 +46,13 @@ private:
                         break;
                     }
 
+                    for (leg : legs)
+                    {
+                        RCLCPP_INFO(this->get_logger(), "leg index: %i", leg.index);
+                    }
+
+                    response->complete = true;
+
                     
                 }
                 else
@@ -79,7 +86,8 @@ private:
             LegData leg{};
             leg.index = middle_index;
             legs.push_back(leg);
-
         }
+
+
         return legs;
     }

@@ -35,8 +35,21 @@ ament_target_dependencies(pre_approach
 	generic_manager
 )
 
+add_executable(pre_approach_v2 src/pre_approach_v2.cpp)
+ament_target_dependencies(pre_approach_v2 
+    "lifecycle_msgs"
+    "rclcpp_lifecycle"
+    "std_msgs"
+    rclcpp
+	geometry_msgs
+	nav_msgs
+	sensor_msgs
+	generic_manager
+)
+
 install(TARGETS
    pre_approach
+   pre_approach_v2
    DESTINATION lib/${PROJECT_NAME}
  )
 
