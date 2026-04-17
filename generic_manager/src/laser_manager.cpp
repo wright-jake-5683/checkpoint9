@@ -18,3 +18,35 @@ float LaserManager::find_angle_from_laser_reading(sensor_msgs::msg::LaserScan::S
     float angle = msg->angle_min + (index * msg->angle_increment);
     return angle;
 }
+
+std::vector<std::vector<size_t>> LaserManager::cluster_laser_data(float[] &readings)
+{
+    std::vector<std::vector<size_t>> clusters;
+    std::vector<size_t> current_cluster;
+
+    const float INTENSITY_THRESHOLD = 1000.0;
+
+    for (size_t i = 0; i < readings.size(); ++i)
+    {
+        if (readings[i] > INTENSITY_THRESHOLD)
+        {
+            if (current_cluster.empty() || i == current_cluster.back() + 1)
+            {
+                current_cluster.push_back(i);
+            }
+            else
+            {
+                clusters.push_back(current_cluster);
+                current_cluster.clear();
+                current_cluster.push_back(i);
+            }
+        }
+    }
+
+    if (!current_cluster.empty())
+    {
+        clusters.push_back(current_cluster);
+    }
+
+    return clusters;
+}

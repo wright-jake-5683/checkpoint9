@@ -16,10 +16,11 @@ find_package(nav_msgs REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
 find_package(rclcpp_lifecycle REQUIRED)
 find_package(generic_manager REQUIRED)
+find_package(rosidl_default_generators REQUIRED)
 
 rosidl_generate_interfaces(${PROJECT_NAME}
   "srv/GoToLoading.srv"
-   DEPENDENCIES std_msgs
+   DEPENDENCIES std_msgs sensor_msgs
 )
 
 add_executable(pre_approach src/pre_approach.cpp)

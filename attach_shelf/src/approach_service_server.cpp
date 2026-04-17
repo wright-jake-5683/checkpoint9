@@ -3,11 +3,14 @@
 #include <cstddef>
 #include <cstdint>
 #include <rclcpp/rclcpp.hpp>
+#include "point_2d.hpp"
+#include "laser_manager.hpp"
 
 struct LegData
 {
     float distance;
     float angle;
+    Point2D point;
 };
 
 class ApproachShelfService : public rclcpp::Node {
@@ -21,11 +24,14 @@ public:
                   std::placeholders::_1, std::placeholders::_2)
     );
 
+    laser_helper_ = std::make_shared<LaserManager>();
+
     RCLCPP_INFO(this->get_logger(), "%s is ready...", service_name_);
   }
 
 private:
-    std::string service_name_
+    std::string service_name_;
+    std::shared_ptr<LaserManager> laser_helper_;
 
     void service_callback(const std::shared_ptr<custom_interfaces::srv::GetDirection::Request> request,
         std::shared_ptr<custom_interfaces::srv::GetDirection::Response> response) 
@@ -37,14 +43,14 @@ private:
                 if (request->attach_to_shelf)
                 {
                     LegData[] legs = detect_shelf_legs(request->laser_data);
-                    if (legs.empty())
+                    if (!legs)
                     {
                         RCLCPP_INFO(this->get_logger(), "Cannot detect shelf legs. Aborting task...");
                         response->completed = false;
                         break;
                     }
 
-
+                    
 
                     
                 }
@@ -58,5 +64,14 @@ private:
                 RCLCPP_ERROR(this->get_logger(), "Approach Shelf Service Exception: %s", e.what());
             }
         }
-
     
+    LegData[] detect_shelf_legs(sensor_msgs::msg::LaserScan laser_data)
+    {
+        auto clusters = laser_helper_->cluster_laser_data(laser_data.intensities);
+        if (clusters.size() < 2)
+        {
+            return nullptr;
+        }
+
+        
+    }
