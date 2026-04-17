@@ -1,5 +1,6 @@
 #pragma once
 
+#include "laser_readings.hpp"
 #include "sensor_msgs/msg/laser_scan.hpp"
 #include <cmath>
 #include <vector>
@@ -13,5 +14,5 @@ public:
 
     float find_angle_from_laser_reading(sensor_msgs::msg::LaserScan::SharedPtr msg, int index);
 
-    std::vector<std::vector<size_t>> cluster_laser_data(float[] &readings);
+    std::vector<std::vector<LaserReadings>> cluster_laser_data(const std::vector<float> &readings);
 };

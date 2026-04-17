@@ -5,13 +5,9 @@
 #include <rclcpp/rclcpp.hpp>
 #include "point_2d.hpp"
 #include "laser_manager.hpp"
+#include "laser_readings.hpp"
+#include "leg_data.hpp"
 
-struct LegData
-{
-    float distance;
-    float angle;
-    Point2D point;
-};
 
 class ApproachShelfService : public rclcpp::Node {
 public:
@@ -42,15 +38,13 @@ private:
 
                 if (request->attach_to_shelf)
                 {
-                    LegData[] legs = detect_shelf_legs(request->laser_data);
-                    if (!legs)
+                    auto legs = detect_shelf_legs(request->laser_data);
+                    if (legs.empty())
                     {
                         RCLCPP_INFO(this->get_logger(), "Cannot detect shelf legs. Aborting task...");
                         response->completed = false;
                         break;
                     }
-
-                    
 
                     
                 }
@@ -65,13 +59,27 @@ private:
             }
         }
     
-    LegData[] detect_shelf_legs(sensor_msgs::msg::LaserScan laser_data)
+    std::vector<LegData> detect_shelf_legs(sensor_msgs::msg::LaserScan laser_data)
     {
-        auto clusters = laser_helper_->cluster_laser_data(laser_data.intensities);
+        std::vector<std::vector<LaserReadings>> clusters = laser_helper_->cluster_laser_data(laser_data.intensities);
         if (clusters.size() < 2)
         {
-            return nullptr;
+            return {};
         }
 
-        
+        std::vector<LegData> legs;
+        for (const auto &cluster : clusters)
+        {
+            long unsigned int sum = 0;
+            for (const auto &reading : cluster)
+            {
+                sum += reading.index;
+            }
+            size_t middle_index = sum / cluster.size();
+            LegData leg{};
+            leg.index = middle_index;
+            legs.push_back(leg);
+
+        }
+        return legs;
     }
