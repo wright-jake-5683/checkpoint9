@@ -51,6 +51,14 @@ def generate_launch_description():
         parameters=[{'use_sim_time': True}],
         arguments=['-d', global_path_to_rviz_file])
 
+    approach_service_server_node = Node(
+        package='attach_shelf',
+        executable='approach_service_server',
+        output='screen',
+        name='approach_shelf_service_node',
+        parameters=[{'use_sim_time': True}]
+    )
+
     lifecycle_node = LifecycleNode(
         package='attach_shelf',
         executable='pre_approach_v2',
@@ -100,6 +108,7 @@ def generate_launch_description():
         final_approach_arg,
         rviz_config_file_name_arg,
         rviz_node,
+        approach_service_server_node,
         lifecycle_node,
         configure_event,
         configured_message,

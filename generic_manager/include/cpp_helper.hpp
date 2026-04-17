@@ -1,3 +1,9 @@
+#include <string>
+#include <array>
+#include <charconv>
+#include <stdexcept>
+#include <sstream>
+
 #pragma once
 
 class CppHelper {
@@ -40,4 +46,4 @@ class CppHelper {
                 return std::to_string(value);
             }
         }
-}
+};

@@ -3,7 +3,7 @@
 CppHelper::CppHelper()
 {}
 
-CppHelper convert_string_to_bool(std::string string)
+bool CppHelper::convert_string_to_bool(std::string string)
 {
     for (auto &x : string)
     {

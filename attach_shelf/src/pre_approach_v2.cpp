@@ -1,5 +1,6 @@
 #include <cmath>
 #include <memory>
+#include <charconv>
 #include <rclcpp/rclcpp.hpp>
 #include "cpp_helper.hpp"
 #include "rclcpp/callback_group.hpp"
@@ -15,6 +16,7 @@
 #include "lifecycle_manager.hpp"
 #include "cpp_helper.hpp"
 #include "ros2_service_manager.hpp"
+#include "attach_shelf/srv/go_to_loading.hpp"
 
 using rclcpp_lifecycle::node_interfaces::LifecycleNodeInterface;
 using namespace std::chrono_literals;
@@ -83,19 +85,17 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             //////// Create Service Client ////////
             ///////////////////////////////////////
             std::string service_name = "/approach_shelf";
-            client_ = this->create_client<attach_shelf::srv::GoToLoading>(serivce_name);
+            client_ = this->create_client<attach_shelf::srv::GoToLoading>(service_name);
             // Wait for the service to be available (checks every second)
-            while (!service_client_->wait_for_service(1s)) {
+            while (!client_->wait_for_service(1s)) {
                 if (!rclcpp::ok()) {
                     RCLCPP_ERROR(this->get_logger(), "Interrupted while waiting for the %s service. Exiting...", service_name.c_str());
-                    return;
+                    break;
                 }
                     RCLCPP_INFO(this->get_logger(), "%s not available, waiting again...", service_name.c_str());
                 }
 
                 RCLCPP_INFO(this->get_logger(), "%s client ready!", service_name.c_str());
-            }
-
 
             return CallbackReturn::SUCCESS;
         }
@@ -151,7 +151,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
             front_laser_reading_ = laser_helper_->read_front_laser(msg);
-            laser_data_ = msg;
+            laser_data_ = *msg;
         }
 
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg)
@@ -186,23 +186,23 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         {
             if (!final_approach_)
             {
-                RCLCPP_WARN(this->get_logger() "Final Approach is set to False, will not perform after getting into position");
-                break;
+                RCLCPP_WARN(this->get_logger(), "Final Approach is set to False, will not perform after getting into position");
+                return;
             }
             else if (!in_position_)
             {
-                break;
+                return;
             }
             else 
             {
                 this->timer_2_->cancel();
 
                 auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
-                request.attach_shelf = final_approach_;
-                request.laser_data = laser_data_;
+                request->attach_to_shelf = final_approach_;
+                request->laser_data = laser_data_;
                 std::chrono::seconds time_out = 3s;
-                auto future_result = client_->send_async_request(request);
-                auto future_status = service_manager_->wait_for_result(future_result, time_out)
+                auto future_result = client_->async_send_request(request);
+                auto future_status = service_manager_->wait_for_result(future_result, time_out);
 
                 if (future_status != std::future_status::ready) {
                     RCLCPP_ERROR(this->get_logger(), "Server time out while final approach service: %s", client_->get_service_name());
@@ -210,7 +210,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
                 if (future_status == std::future_status::ready) {
                     auto result = future_result.get();
-                    bool final_approach_complete = result->complete();
+                    bool final_approach_complete = result->complete;
                     if (final_approach_complete)
                     {
                         RCLCPP_INFO(this->get_logger(), "Final Approach Complete");
@@ -226,6 +226,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                     RCLCPP_WARN(this->get_logger(), "Failed to call final approach service: %s: ", client_->get_service_name());
                 }
             }
+        }
 
         char **argv_;
         std::shared_ptr<MyLifecycleServiceClient> lifecycle_manager_;
@@ -246,7 +247,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         rclcpp::CallbackGroup::SharedPtr callback_group_timer_1_;
         rclcpp::CallbackGroup::SharedPtr callback_group_timer_2_;
 
-        sensor_msgs::msg::LaserScan::SharedPtr laser_data_;
+        sensor_msgs::msg::LaserScan laser_data_;
         float obstacle_;
         float degrees_;
         bool final_approach_;

@@ -13,9 +13,9 @@ float LaserManager::read_front_laser(const sensor_msgs::msg::LaserScan::SharedPt
     return msg->ranges[middle_index];
 }
 
-float LaserManager::find_angle_from_laser_reading(sensor_msgs::msg::LaserScan::SharedPtr msg, int index)
+float LaserManager::find_angle_from_laser_reading(sensor_msgs::msg::LaserScan msg, int index)
 {
-    float angle = msg->angle_min + (index * msg->angle_increment);
+    float angle = msg.angle_min + (index * msg.angle_increment);
     return angle;
 }
 
@@ -24,7 +24,7 @@ std::vector<std::vector<LaserReadings>> LaserManager::cluster_laser_data(const s
     std::vector<std::vector<LaserReadings>> clusters;
     std::vector<LaserReadings> current_cluster;
 
-    const float INTENSITY_THRESHOLD = 1000.0;
+    const float INTENSITY_THRESHOLD = 7000.0;
 
     for (size_t i = 0; i < readings.size(); ++i)
     {

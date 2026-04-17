@@ -1,5 +1,9 @@
 #pragma once
 
+#include <future>
+#include <chrono>
+#include <rclcpp/rclcpp.hpp>
+
 class ServiceManager
 {
     public:
@@ -24,4 +28,4 @@ class ServiceManager
 
             return status;
         }
-}
+};

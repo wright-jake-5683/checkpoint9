@@ -93,6 +93,40 @@ target_include_directories(lifecycle_manager
 )
 
 # =========================
+# service_manager
+# =========================
+add_library(service_manager
+  src/ros2_service_manager.cpp
+)
+
+ament_target_dependencies(service_manager
+	rclcpp
+)
+
+target_include_directories(service_manager
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+# =========================
+# cpp_helper
+# =========================
+add_library(cpp_helper
+  src/cpp_helper.cpp
+)
+
+ament_target_dependencies(cpp_helper
+)
+
+target_include_directories(cpp_helper
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+
+# =========================
 # install libraries
 # =========================
 install(TARGETS
@@ -100,6 +134,8 @@ install(TARGETS
   laser_manager
   odom_manager
   lifecycle_manager
+  service_manager
+  cpp_helper
   EXPORT export_generic_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

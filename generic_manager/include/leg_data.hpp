@@ -20,3 +20,5 @@ struct LegData
                std::isnan(angle); 
     }
 };
+
+#endif
