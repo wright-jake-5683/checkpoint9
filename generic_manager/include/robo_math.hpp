@@ -3,9 +3,10 @@
 
 class RoboMath
 {
-    RoboMath();
+    public:
+        RoboMath();
 
-    Point2D find_midpoint(Point2D &point_1, Point2D point_2);
+        Point2D find_midpoint(Point2D &point_1, Point2D point_2);
 
-    Point2D find_2d_coords_from_hypotenuse(float &r, float &theta);
-}
+        Point2D find_2d_coords_from_hypotenuse(float &r, float &theta);
+};

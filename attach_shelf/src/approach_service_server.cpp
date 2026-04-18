@@ -51,20 +51,22 @@ private:
                         return;
                     }
                     
-                    for (leg : legs)
+                    for (const auto &leg : legs)
                     {
-                        RCLCPP_INFO(this->get_logger(), "leg index: %i \n
-                                                         leg distance: %.2f
-                                                         leg angle: %.2f
-                                                         leg point x: %f
-                                                         lef point y: %f", 
+                        RCLCPP_INFO(this->get_logger(), "leg index: %i \n"
+                                                         "leg distance: %.2f \n"
+                                                         "leg angle: %.2f \n"
+                                                         "leg point x: %f \n"
+                                                         "leg point y: %f", 
                                                          leg.index,
                                                          leg.distance,
                                                          leg.angle,
-                                                         leg point.x,
+                                                         leg.point.x,
                                                          leg.point.y
                         );
                     }
+
+                    response->complete = true;
 
                 }
                 else
@@ -102,18 +104,19 @@ private:
         }
 
         // Extract ranges from leg indidies
-        for (const auto &leg : legs )
+        for (auto &leg : legs )
         {
+        
             leg.distance = laser_data.ranges[leg.index];
         }
 
         // Get angle of each laser reading
-        for (const auto &leg : legs)
+        for (auto &leg : legs)
         {
             leg.angle = laser_helper_->find_angle_from_laser_reading(laser_data, leg.index);
         }
 
-        for (const auto &leg : leg)
+        for (auto &leg : legs)
         {
             leg.point = robo_math_helper_->find_2d_coords_from_hypotenuse(leg.distance, leg.angle);
         }

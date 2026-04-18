@@ -125,6 +125,23 @@ target_include_directories(cpp_helper
     $<INSTALL_INTERFACE:include>
 )
 
+# =========================
+# robo_math
+# =========================
+add_library(robo_math
+  src/robo_math.cpp
+)
+
+ament_target_dependencies(robo_math
+)
+
+target_include_directories(robo_math
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+
 
 # =========================
 # install libraries
@@ -136,6 +153,7 @@ install(TARGETS
   lifecycle_manager
   service_manager
   cpp_helper
+  robo_math
   EXPORT export_generic_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib
