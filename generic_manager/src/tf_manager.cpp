@@ -84,3 +84,39 @@ std::shared_ptr<Coordinates> TfManager::get_tf_coords_parent_to_child(const std:
         yaw
     );
 }
+
+geometry_msgs::msg::Twist TfManager::move_subject_towards_target(std::shared_ptr<Coordinates> subject, std::shared_ptr<Coordinates> target)
+{
+       // --- Position error ---
+            double dx = target->x - subject->x;
+            double dy = target->y - subject->y;
+            double distance = std::sqrt(dx*dx + dy*dy);
+
+
+            // --- Angle to target position ---
+            double dyaw = std::atan2(dy, dx);
+
+
+            // --- Heading error, normalized to [-pi, pi] ---
+            double yaw_error = dyaw - subject->yaw;
+            while (yaw_error >  M_PI) yaw_error -= 2.0 * M_PI;
+            while (yaw_error < -M_PI) yaw_error += 2.0 * M_PI;
+
+            //constexpr tells complier kp_yaw & kp_distance values at complie time instead of at runtime
+            constexpr double kp_yaw = 1;
+            double kp_distance;
+            if (yaw_error > -0.1 && yaw_error < 0.1)
+            {
+                kp_distance = 0.5;
+            }
+            else 
+            {
+                kp_distance = 0.25;
+            }
+
+            geometry_msgs::msg::Twist cmd;
+            cmd.linear.x = kp_distance * distance;
+            cmd.angular.z = kp_yaw * yaw_error;
+
+            return cmd;
+}

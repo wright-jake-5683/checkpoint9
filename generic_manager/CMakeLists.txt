@@ -141,6 +141,26 @@ target_include_directories(robo_math
     $<INSTALL_INTERFACE:include>
 )
 
+# =========================
+# tf_manager
+# =========================
+add_library(tf_manager
+  src/tf_manager.cpp
+)
+
+ament_target_dependencies(tf_manager
+	rclcpp
+	tf2_ros
+	geometry_msgs
+)
+
+target_include_directories(tf_manager
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+
 
 
 # =========================
@@ -154,6 +174,7 @@ install(TARGETS
   service_manager
   cpp_helper
   robo_math
+  tf_manager
   EXPORT export_generic_manager
   ARCHIVE DESTINATION lib
   LIBRARY DESTINATION lib

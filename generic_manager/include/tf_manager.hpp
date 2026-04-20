@@ -4,6 +4,7 @@
 #include "tf2/LinearMath/Quaternion.h"
 #include "rclcpp/rclcpp.hpp"
 #include "tf2/LinearMath/Matrix3x3.h"
+#include <memory>
 
 class TfManager
 {
@@ -11,6 +12,10 @@ class TfManager
         TfManager(rclcpp::Clock::SharedPtr node_clock, rclcpp::Logger node_logger);
 
         void create_static_transform(const Transform &new_transform);
+
+        std::shared_ptr<Coordinates> get_tf_coords_parent_to_child(const std::string &parent_frame, const std::string &child_frame)
+
+        geometry_msgs::msg::Twist move_subject_towards_target(std::shared_ptr<Coordinates> subject std::shared_ptr<Coordinates> target)
 
     private:
         tf2_ros::StaticTransformBroadcaster static_broadcaster_;

@@ -3,11 +3,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <rclcpp/rclcpp.hpp>
+#include <vector>
 #include "point_2d.hpp"
 #include "laser_manager.hpp"
 #include "laser_readings.hpp"
 #include "leg_data.hpp"
 #include "robo_math.hpp"
+#include "tf_manager.hpp"
 
 
 class ApproachShelfService : public rclcpp::Node {
@@ -33,6 +35,7 @@ private:
     rclcpp::Service<attach_shelf::srv::GoToLoading>::SharedPtr service_;
     std::shared_ptr<LaserManager> laser_helper_;
     std::shared_ptr<RoboMath> robo_math_helper_;
+    std::shared_ptr<TfManager> tf_manager_;
 
     void service_callback(const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
         std::shared_ptr<attach_shelf::srv::GoToLoading::Response> response) 
@@ -51,20 +54,7 @@ private:
                         return;
                     }
                     
-                    for (const auto &leg : legs)
-                    {
-                        RCLCPP_INFO(this->get_logger(), "leg index: %i \n"
-                                                         "leg distance: %.2f \n"
-                                                         "leg angle: %.2f \n"
-                                                         "leg point x: %f \n"
-                                                         "leg point y: %f", 
-                                                         leg.index,
-                                                         leg.distance,
-                                                         leg.angle,
-                                                         leg.point.x,
-                                                         leg.point.y
-                        );
-                    }
+                    create_cart_frame(legs);
 
                     response->complete = true;
 
@@ -123,6 +113,26 @@ private:
 
         return legs;
     }
+
+    void create_cart_frame(std::vector<LegData> legs)
+    {
+        auto midpoint = robo_math_helper_->find_midpoint(legs[0].point, legs[1].point);
+        
+        Transform new_transform;
+        new_transform.translation_x = midpoint.x;
+        new_transform.translation_y = midpoint.y;
+        new_transform.translation_z = 0;
+        new_transform.parent_frame = "/robot_front_laser_base_link";
+        new_transform.child_frame = "/cart_frame";
+        new_transform.roll = 0;
+        new_transform.pitch = 0;
+        new_transform.yaw = 0;
+
+        tf_manager_->create_static_transform(new_transform);
+    }
+    
+
+    
 };
 
 int main(int argc, char **argv) {
