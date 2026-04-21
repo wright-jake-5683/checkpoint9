@@ -161,7 +161,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         void to_go_position()
         {   
-            this->timer_1_->cancel();
+            timer_1_->cancel();
             while (front_laser_reading_ > obstacle_ && !destination_reached_)
             {
                 diff_drive_helper_->publish_cmd_vel(0.5, 0.0);
@@ -195,7 +195,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             }
             else 
             {
-                this->timer_2_->cancel();
+                timer_2_->cancel();
 
                 auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
                 request->attach_to_shelf = final_approach_;

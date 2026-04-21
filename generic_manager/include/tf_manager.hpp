@@ -13,14 +13,17 @@ class TfManager
 
         void create_static_transform(const Transform &new_transform);
 
-        std::shared_ptr<Coordinates> get_tf_coords_parent_to_child(const std::string &parent_frame, const std::string &child_frame)
+        std::shared_ptr<Coordinates> get_tf_coords_parent_to_child(const std::string &parent_frame, const std::string &child_frame);
 
-        geometry_msgs::msg::Twist move_subject_towards_target(std::shared_ptr<Coordinates> subject std::shared_ptr<Coordinates> target)
+        geometry_msgs::msg::Twist move_subject_towards_target(std::shared_ptr<Coordinates> subject std::shared_ptr<Coordinates> target);
+
+        bool check_if_tf_exists(std::string &child_frame, std::string &parent_frame);
 
     private:
         tf2_ros::StaticTransformBroadcaster static_broadcaster_;
         rclcpp::Clock clock_;
         rclcpp::Logger logger_;
+        tf2_ros::Buffer tf_buffer_;
 };
 
 

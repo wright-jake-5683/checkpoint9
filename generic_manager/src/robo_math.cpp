@@ -24,3 +24,9 @@ Point2D RoboMath::find_midpoint(Point2D &point_1, Point2D point_2)
     point.y = midpoint_y;
     return point;
 }
+
+float RoboMath::calculate_vel_by_distance(float meters, std::chrono::seconds time)
+{
+    float velocity = meters / time;
+    return velocity;
+}

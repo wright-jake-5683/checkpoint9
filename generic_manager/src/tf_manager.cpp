@@ -1,7 +1,9 @@
 #include "tf_manager.hpp"
 
 TfManager::TfManager() : clock_(node_clock), logger_(node_logger)
-{}
+{
+    tf_buffer_ = clock_->get_clock();
+}
 
 void TfManager::create_static_transform(const Transform &new_transform)
 {
@@ -37,11 +39,10 @@ void TfManager::create_static_transform(const Transform &new_transform)
 std::shared_ptr<Coordinates> TfManager::get_tf_coords_parent_to_child(const std::string &parent_frame, const std::string &child_frame)
 {
      geometry_msgs::msg::TransformStamped transform;
-     std::shared_ptr<tf2_ros::Buffer> tf_buffer = std::make_shared<tf2_ros::Buffer>(clock_->get_clock());;
 
     try
     {
-        transform = tf_buffer->lookupTransform(parent_frame.c_str(), child_frame.c_str(), tf2::TimePointZero, tf2::durationFromSec(1.0));
+        transform = tf_buffer_->lookupTransform(parent_frame.c_str(), child_frame.c_str(), tf2::TimePointZero, tf2::durationFromSec(1.0));
     }
     catch (const tf2::TransformException &e)
     {
@@ -87,36 +88,48 @@ std::shared_ptr<Coordinates> TfManager::get_tf_coords_parent_to_child(const std:
 
 geometry_msgs::msg::Twist TfManager::move_subject_towards_target(std::shared_ptr<Coordinates> subject, std::shared_ptr<Coordinates> target)
 {
-       // --- Position error ---
-            double dx = target->x - subject->x;
-            double dy = target->y - subject->y;
-            double distance = std::sqrt(dx*dx + dy*dy);
+    // --- Position error ---
+    double dx = target->x - subject->x;
+    double dy = target->y - subject->y;
+    double distance = std::sqrt(dx*dx + dy*dy);
 
 
-            // --- Angle to target position ---
-            double dyaw = std::atan2(dy, dx);
+    // --- Angle to target position ---
+    double dyaw = std::atan2(dy, dx);
 
 
-            // --- Heading error, normalized to [-pi, pi] ---
-            double yaw_error = dyaw - subject->yaw;
-            while (yaw_error >  M_PI) yaw_error -= 2.0 * M_PI;
-            while (yaw_error < -M_PI) yaw_error += 2.0 * M_PI;
+    // --- Heading error, normalized to [-pi, pi] ---
+    double yaw_error = dyaw - subject->yaw;
+    while (yaw_error >  M_PI) yaw_error -= 2.0 * M_PI;
+    while (yaw_error < -M_PI) yaw_error += 2.0 * M_PI;
 
-            //constexpr tells complier kp_yaw & kp_distance values at complie time instead of at runtime
-            constexpr double kp_yaw = 1;
-            double kp_distance;
-            if (yaw_error > -0.1 && yaw_error < 0.1)
-            {
-                kp_distance = 0.5;
-            }
-            else 
-            {
-                kp_distance = 0.25;
-            }
+    //constexpr tells complier kp_yaw & kp_distance values at complie time instead of at runtime
+    constexpr double kp_yaw = 1;
+    double kp_distance;
+    if (yaw_error > -0.1 && yaw_error < 0.1)
+    {
+        kp_distance = 0.25;
+    }
+    else 
+    {
+        kp_distance = 0.10;
+    }
 
-            geometry_msgs::msg::Twist cmd;
-            cmd.linear.x = kp_distance * distance;
-            cmd.angular.z = kp_yaw * yaw_error;
+    geometry_msgs::msg::Twist cmd;
+    cmd.linear.x = kp_distance * distance;
+    cmd.angular.z = kp_yaw * yaw_error;
 
-            return cmd;
+    return cmd;
+}
+
+bool TfManager::check_if_tf_exists(std::string &parent_frame, std::string &child_frame)
+{
+    if (tf_buffer_.canTransform(child_frame, parent_frame, tf2::TimePointZero))
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
