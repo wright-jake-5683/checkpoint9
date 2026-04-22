@@ -7,16 +7,16 @@
 
 struct Point2D
 {
-    double x;
-    double y;
+    double x_;
+    double y_;
 
-    Point2D() : x(std::numeric_limits<double>::quiet_NaN()), y(std::numeric_limits<double>::quiet_NaN())
+    Point2D() : x_(std::numeric_limits<double>::quiet_NaN()), y_(std::numeric_limits<double>::quiet_NaN())
     {}
 
     bool isEmpty() const
     {
-        return std::isnan(x) && 
-               std::isnan(y);
+        return std::isnan(x_) && 
+               std::isnan(y_);
     }
 };
 

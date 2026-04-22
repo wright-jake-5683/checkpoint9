@@ -1,6 +1,5 @@
 #include "attach_shelf/srv/go_to_loading.hpp"
-#include "diff_drive_manager.hpp"
-#include "rclcpp/node.hpp"
+#include "rclcpp/rclcpp.hpp"
 #include <cstddef>
 #include <cstdint>
 #include <rclcpp/rclcpp.hpp>
@@ -11,8 +10,9 @@
 #include "leg_data.hpp"
 #include "robo_math.hpp"
 #include "tf_manager.hpp"
+#include "geometry_msgs/msg/twist.hpp"
 
-using std::chrono_literals;
+using namespace std::literals::chrono_literals;
 
 class ApproachShelfService : public rclcpp::Node {
 public:
@@ -25,8 +25,11 @@ public:
                   std::placeholders::_1, std::placeholders::_2)
     );
 
-    timer_ = this->create_wall_timer(50ms, std::bind(&ApproachShelfService::timer_callback, this);
+    timer_ = this->create_wall_timer(50ms, std::bind(&ApproachShelfService::timer_callback, this));
 
+    tf_manager_ = std::make_shared<TfManager>(shared_from_this());
+
+    cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 10);
 
     RCLCPP_INFO(this->get_logger(), "%s is ready...", service_name_.c_str());
   }
@@ -37,10 +40,10 @@ private:
     std::shared_ptr<rclcpp::TimerBase> timer_;
     LaserManager laser_helper_;
     RoboMath robo_math_helper_;
-    TfManager tf_manager_;
-    DiffDriveManager diff_drive_helper_;
+    std::shared_ptr<TfManager> tf_manager_;
+    rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_publisher_;
     bool final_approach_ready_ = false;
-    bool cart_approach_ = false;
+    bool cart_approach_complete_ = false;
 
     void service_callback(const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
         std::shared_ptr<attach_shelf::srv::GoToLoading::Response> response) 
@@ -62,18 +65,20 @@ private:
                     create_reference_frame();
                     create_cart_frame(legs);
 
-                    bool cart_frame_exists = tf_manager_.check_if_tf_exists("/reference_frame", "/cart_frame");
-                    bool rb1_base_footprint_exists = tf_manager_.check_if_tf_exists("/reference_frame", "/robot_base_footprint");
+                    bool cart_frame_exists = tf_manager_->check_if_tf_exists("/reference_frame", "/cart_frame");
+                    bool rb1_base_footprint_exists = tf_manager_->check_if_tf_exists("/reference_frame", "/robot_base_footprint");
 
                     if (cart_frame_exists && rb1_base_footprint_exists)
                     {
                         final_approach_ready_ = true;
                     }
 
-                    if (cart_approach_complete)
+                    if (cart_approach_complete_)
                     {
-                        float velocity = robo_math_helper_.calculate_vel_by_distance(0.3, 1s);
-                        diff_drive_helper_.publish_cmd_vel(velocity, 0.0);
+                        float velocity = robo_math_helper_.calculate_vel_by_distance(0.3, 1);
+                        auto msg = geometry_msgs::msg::Twist();
+                        msg.linear.x = velocity;
+                        cmd_publisher_->publish(msg);
                     }
 
                     response->complete = true;
@@ -93,21 +98,21 @@ private:
     {
         if (final_approach_ready_)
         {
-            std::shared_ptr<Coordinates> rb1 = tf_manager_.get_tf_coords_parent_to_child("/reference_frame", "/robot_base_footprint");
-            std::shared_ptr<Coordinates> cart = tf_manager_.get_tf_coords_parent_to_child("/reference_frame", "/cart_frame");
+            std::shared_ptr<Coordinates> rb1 = tf_manager_->get_tf_coords_parent_to_child("/reference_frame", "/robot_base_footprint");
+            std::shared_ptr<Coordinates> cart = tf_manager_->get_tf_coords_parent_to_child("/reference_frame", "/cart_frame");
 
-            double dx = cart->x - rb1->x;
-            double dy = cart->y - rb1->y;
+            double dx = cart->x_ - rb1->x_;
+            double dy = cart->y_ - rb1->y_;
             double distance = std::sqrt(dx*dx + dy*dy);
 
             if (distance != 0.0) 
             {
-                tf_manager_.move_subject_towards_target(rb1, cart);
+                tf_manager_->move_subject_towards_target(rb1, cart);
             }
             else 
             {
                 timer_->cancel();
-                cart_approach_complete = true;
+                cart_approach_complete_ = true;
             }
         }
     }
@@ -159,16 +164,16 @@ private:
         void create_reference_frame()
         {   
             Transform new_transform;
-            new_transform.translation_x = 0;
-            new_transform.translation_y = 0;
-            new_transform.translation_z = 0;
-            new_transform.parent_frame = "/reference_frame";
-            new_transform.child_frame = "/robot_base_footprint";
-            new_transform.roll = 0;
-            new_transform.pitch = 0;
-            new_transform.yaw = 0;
+            new_transform.translation_x_ = 0;
+            new_transform.translation_y_ = 0;
+            new_transform.translation_z_ = 0;
+            new_transform.parent_frame_ = "/reference_frame";
+            new_transform.child_frame_ = "/robot_base_footprint";
+            new_transform.roll_ = 0;
+            new_transform.pitch_ = 0;
+            new_transform.yaw_ = 0;
 
-            tf_manager_.create_static_transform(new_transform);
+            tf_manager_->create_static_transform(new_transform);
         }
 
         void create_cart_frame(std::vector<LegData> legs)
@@ -176,16 +181,16 @@ private:
             auto midpoint = robo_math_helper_.find_midpoint(legs[0].point, legs[1].point);
             
             Transform new_transform;
-            new_transform.translation_x = midpoint.x;
-            new_transform.translation_y = midpoint.y;
-            new_transform.translation_z = 0;
-            new_transform.parent_frame = "/robot_front_laser_base_link";
-            new_transform.child_frame = "/cart_frame";
-            new_transform.roll = 0;
-            new_transform.pitch = 0;
-            new_transform.yaw = 0;
+            new_transform.translation_x_ = midpoint.x_;
+            new_transform.translation_y_ = midpoint.y_;
+            new_transform.translation_z_ = 0;
+            new_transform.parent_frame_ = "/robot_front_laser_base_link";
+            new_transform.child_frame_ = "/cart_frame";
+            new_transform.roll_ = 0;
+            new_transform.pitch_ = 0;
+            new_transform.yaw_ = 0;
 
-            tf_manager_.create_static_transform(new_transform);
+            tf_manager_->create_static_transform(new_transform);
         }    
 };
 

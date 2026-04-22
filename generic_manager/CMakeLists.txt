@@ -14,6 +14,7 @@ find_package(sensor_msgs REQUIRED)
 find_package(nav_msgs REQUIRED)
 find_package(tf2 REQUIRED)
 find_package(lifecycle_msgs REQUIRED)
+find_package(tf2_ros REQUIRED)
 
 # =========================
 # diff_drive_manager

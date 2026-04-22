@@ -1,6 +1,7 @@
 #pragma once
 #include "point_2d.hpp"
 
+
 class RoboMath
 {
     public:
@@ -10,5 +11,5 @@ class RoboMath
 
         Point2D find_2d_coords_from_hypotenuse(float &r, float &theta);
 
-        float calculate_vel_by_distance(float meters, std::chrono::seconds time);
+        float calculate_vel_by_distance(float meters, float seconds);
 };

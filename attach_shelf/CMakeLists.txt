@@ -49,6 +49,7 @@ ament_target_dependencies(approach_service_server
 	nav_msgs
 	sensor_msgs
 	generic_manager
+	geometry_msgs
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}
