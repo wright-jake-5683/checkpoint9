@@ -1,7 +1,9 @@
 #include "tf_manager.hpp"
 
-TfManager::TfManager(rclcpp::Node::SharedPtr node) : static_broadcaster_(node), node_(node), tf_buffer_(node->get_clock())
+TfManager::TfManager(rclcpp::Node::SharedPtr node) 
+    : static_broadcaster_(node), node_(node), tf_buffer_(node->get_clock()), tf_listener_(tf_buffer_) 
 {
+    //tf_buffer_.setUsingDedicatedThread(true);
 }
 
 void TfManager::create_static_transform(const Transform &new_transform)

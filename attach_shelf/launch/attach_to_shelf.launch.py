@@ -107,6 +107,7 @@ def generate_launch_description():
         degrees_arg,
         final_approach_arg,
         rviz_config_file_name_arg,
+        #rviz_node,
         approach_service_server_node,
         lifecycle_node,
         configure_event,

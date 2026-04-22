@@ -29,6 +29,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         CallbackReturn on_configure(const rclcpp_lifecycle::State &)
         {
+            destination_reached_ = false;
             ////////////////////////////////////////
             //////// Extract Node Arguments ////////
             ///////////////////////////////////////
@@ -151,6 +152,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
             front_laser_reading_ = laser_helper_->read_front_laser(msg);
+            //RCLCPP_WARN(this->get_logger(), "Front Reading: %.2f", front_laser_reading_);
             laser_data_ = *msg;
         }
 
@@ -179,7 +181,12 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
             RCLCPP_INFO(this->get_logger(), "Task Complete");
 
-            in_position_ = true;
+            if (!final_approach_)
+            {
+                lifecycle_manager_->change_state("shutdown");
+                rclcpp::shutdown();
+            }
+            else{in_position_ = true;}
         }
 
         void final_approach()
@@ -187,6 +194,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             if (!final_approach_)
             {
                 RCLCPP_WARN(this->get_logger(), "Final Approach is set to False, will not perform after getting into position");
+                timer_2_->cancel();
                 return;
             }
             else if (!in_position_)
@@ -200,7 +208,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                 auto request = std::make_shared<attach_shelf::srv::GoToLoading::Request>();
                 request->attach_to_shelf = final_approach_;
                 request->laser_data = laser_data_;
-                std::chrono::seconds time_out = 3s;
+                std::chrono::seconds time_out = 60s;
                 auto future_result = client_->async_send_request(request);
                 auto future_status = service_manager_->wait_for_result(future_result, time_out);
 
@@ -214,6 +222,8 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                     if (final_approach_complete)
                     {
                         RCLCPP_INFO(this->get_logger(), "Final Approach Complete");
+                        lifecycle_manager_->change_state("shutdown");
+                        rclcpp::shutdown();       
                     }
                     else
                     {
@@ -251,7 +261,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
         float obstacle_;
         float degrees_;
         bool final_approach_;
-        bool destination_reached_ = false;
+        bool destination_reached_;
         float front_laser_reading_;
         RPY rpy_;
         bool in_position_ = false;
