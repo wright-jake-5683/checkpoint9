@@ -52,6 +52,7 @@ ament_target_dependencies(approach_service_server
 	generic_manager
 	geometry_msgs
 	tf2_geometry_msgs
+	std_msgs
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

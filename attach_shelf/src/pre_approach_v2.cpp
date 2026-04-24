@@ -147,12 +147,16 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
             obstacle_ = std::stof(argv_[2]);
             degrees_ = std::stof(argv_[4]);
             final_approach_ = cpp_helper_->convert_string_to_bool(argv_[6]);
+
+            if (!final_approach_)
+            {
+                RCLCPP_WARN(this->get_logger(), "attach_to_shelf is set to false, rb1 will not pick up shelf after getting into position");
+            }
         }
 
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
         {
             front_laser_reading_ = laser_helper_->read_front_laser(msg);
-            //RCLCPP_WARN(this->get_logger(), "Front Reading: %.2f", front_laser_reading_);
             laser_data_ = *msg;
         }
 
@@ -191,13 +195,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
 
         void final_approach()
         {
-            if (!final_approach_)
-            {
-                RCLCPP_WARN(this->get_logger(), "Final Approach is set to False, will not perform after getting into position");
-                timer_2_->cancel();
-                return;
-            }
-            else if (!in_position_)
+            if (!in_position_)
             {
                 return;
             }
@@ -228,6 +226,8 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                     else
                     {
                         RCLCPP_ERROR(this->get_logger(), "Final Approach Failed");
+                        lifecycle_manager_->change_state("shutdown");
+                        rclcpp::shutdown();   
                     }
                     
                 } 

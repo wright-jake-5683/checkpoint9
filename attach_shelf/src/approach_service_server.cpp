@@ -14,6 +14,7 @@
 #include "tf_manager.hpp"
 #include "geometry_msgs/msg/twist.hpp"
 #include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
+#include <std_msgs/msg/string.hpp>
 
 using namespace std::literals::chrono_literals;
 
@@ -31,8 +32,7 @@ public:
         RCLCPP_INFO(this->get_logger(), "%s is ready...", service_name_.c_str());
 
         cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 10);
-
-        
+        shelf_publisher_ = this->create_publisher<std_msgs::msg::String>("/elevator_up", 10);
     }
 
     void init()
@@ -50,6 +50,7 @@ private:
     RoboMath robo_math_helper_;
     std::shared_ptr<TfManager> tf_manager_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_publisher_;
+    rclcpp::Publisher<std_msgs::msg::String>::SharedPtr shelf_publisher_;
     bool cart_approach_complete_ = false;
 
     void service_callback(const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
@@ -77,6 +78,10 @@ private:
                     }
 
                     center_under_cart();
+
+                    auto msg = std_msgs::msg::String();
+                    shelf_publisher_->publish(msg);
+
 
                     response->complete = true;
                 }

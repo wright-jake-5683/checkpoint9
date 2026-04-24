@@ -9,6 +9,7 @@ Panels:
         - /RobotModel1
         - /LaserScan1
         - /LaserScan1/Topic1
+        - /TF1
       Splitter Ratio: 0.5
     Tree Height: 548
   - Class: rviz_common/Selection
@@ -80,22 +81,18 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_evelator_base_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_evelator_platform_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_front_cover_link:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
         robot_front_laser_base_link:
           Alpha: 1
           Show Axes: false
@@ -130,7 +127,6 @@ Visualization Manager:
           Alpha: 1
           Show Axes: false
           Show Trail: false
-          Value: true
       Mass Properties:
         Inertia: false
         Mass: false
@@ -172,6 +168,63 @@ Visualization Manager:
         Value: /scan
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Class: rviz_default_plugins/TF
+      Enabled: true
+      Frame Timeout: 15
+      Frames:
+        All Enabled: true
+        cart_frame:
+          Value: true
+        odom:
+          Value: true
+        robot_base_docking_contact_link:
+          Value: true
+        robot_base_footprint:
+          Value: true
+        robot_base_link:
+          Value: true
+        robot_evelator_base_link:
+          Value: true
+        robot_front_cover_link:
+          Value: true
+        robot_front_laser_base_link:
+          Value: true
+        robot_omni_backwheel_link:
+          Value: true
+        robot_omni_front_leftwheel_link:
+          Value: true
+        robot_omni_front_rightwheel_link:
+          Value: true
+        robot_top_cover_link:
+          Value: true
+      Marker Scale: 0.5
+      Name: TF
+      Show Arrows: true
+      Show Axes: true
+      Show Names: true
+      Tree:
+        odom:
+          cart_frame:
+            {}
+          robot_base_footprint:
+            robot_base_link:
+              robot_evelator_base_link:
+                {}
+              robot_front_cover_link:
+                robot_base_docking_contact_link:
+                  {}
+              robot_front_laser_base_link:
+                {}
+              robot_omni_backwheel_link:
+                {}
+              robot_omni_front_leftwheel_link:
+                {}
+              robot_omni_front_rightwheel_link:
+                {}
+            robot_top_cover_link:
+              {}
+      Update Interval: 0
       Value: true
   Enabled: true
   Global Options:
