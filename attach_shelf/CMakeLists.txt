@@ -18,6 +18,7 @@ find_package(rclcpp_lifecycle REQUIRED)
 find_package(generic_manager REQUIRED)
 find_package(rosidl_default_generators REQUIRED)
 find_package(std_msgs REQUIRED)
+find_package(tf2_geometry_msgs REQUIRED)
 
 add_executable(pre_approach src/pre_approach.cpp)
 ament_target_dependencies(pre_approach 
@@ -50,6 +51,7 @@ ament_target_dependencies(approach_service_server
 	sensor_msgs
 	generic_manager
 	geometry_msgs
+	tf2_geometry_msgs
 )
 
 rosidl_generate_interfaces(${PROJECT_NAME}

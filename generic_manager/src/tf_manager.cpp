@@ -1,4 +1,5 @@
 #include "tf_manager.hpp"
+#include "geometry_msgs/msg/detail/point_stamped__struct.hpp"
 
 TfManager::TfManager(rclcpp::Node::SharedPtr node) 
     : static_broadcaster_(node), node_(node), tf_buffer_(node->get_clock()), tf_listener_(tf_buffer_) 
@@ -132,5 +133,18 @@ bool TfManager::check_if_tf_exists(const std::string &parent_frame, const std::s
     else
     {
         return false;
+    }
+}
+
+std::optional<geometry_msgs::msg::PointStamped> TfManager::transform_point(const geometry_msgs::msg::PointStamped &point, const std::string &target_frame)
+{
+    try 
+    {
+        return tf_buffer_.transform(point, target_frame, tf2::durationFromSec(1.0));
+    }
+    catch(const tf2::TransformException &ex)
+    {
+        RCLCPP_WARN(node_->get_logger(), "Could not transform point: %s", ex.what());
+        return std::nullopt;
     }
 }

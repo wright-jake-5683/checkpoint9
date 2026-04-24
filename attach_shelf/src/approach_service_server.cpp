@@ -1,6 +1,7 @@
 #include "attach_shelf/srv/go_to_loading.hpp"
 #include "rclcpp/rclcpp.hpp"
 #include <cstddef>
+#include <chrono>
 #include <cstdint>
 #include <rclcpp/rclcpp.hpp>
 #include <vector>
@@ -12,6 +13,7 @@
 #include "robo_math.hpp"
 #include "tf_manager.hpp"
 #include "geometry_msgs/msg/twist.hpp"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 using namespace std::literals::chrono_literals;
 
@@ -27,15 +29,6 @@ public:
         );
 
         RCLCPP_INFO(this->get_logger(), "%s is ready...", service_name_.c_str());
-
-        callback_group_timer_1_ = this->create_callback_group(
-                rclcpp::CallbackGroupType::MutuallyExclusive);
-
-        callback_group_timer_2_ = this->create_callback_group(
-            rclcpp::CallbackGroupType::MutuallyExclusive);
-
-        timer_1_ = this->create_wall_timer(50ms, std::bind(&ApproachShelfService::timer_callback_1, this), callback_group_timer_1_);
-        timer_2_ = this->create_wall_timer(50ms, std::bind(&ApproachShelfService::timer_callback_2, this), callback_group_timer_2_);
 
         cmd_publisher_ = this->create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 10);
 
@@ -53,17 +46,11 @@ public:
 private:
     std::string service_name_;
     rclcpp::Service<attach_shelf::srv::GoToLoading>::SharedPtr service_;
-    std::shared_ptr<rclcpp::TimerBase> timer_1_;
-    std::shared_ptr<rclcpp::TimerBase> timer_2_;
-    rclcpp::CallbackGroup::SharedPtr callback_group_timer_1_;
-    rclcpp::CallbackGroup::SharedPtr callback_group_timer_2_;
     LaserManager laser_helper_;
     RoboMath robo_math_helper_;
     std::shared_ptr<TfManager> tf_manager_;
     rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr cmd_publisher_;
-    bool final_approach_ready_ = false;
     bool cart_approach_complete_ = false;
-    bool elevator_ready_ = false;
 
     void service_callback(const std::shared_ptr<attach_shelf::srv::GoToLoading::Request> request,
         std::shared_ptr<attach_shelf::srv::GoToLoading::Response> response) 
@@ -83,28 +70,13 @@ private:
                     }
                     
                     create_cart_frame(legs);
-                    /*
-                    bool cart_frame_exists = tf_manager_->check_if_tf_exists("reference_frame", "cart_frame");
-                    bool rb1_base_footprint_exists = tf_manager_->check_if_tf_exists("reference_frame", "robot_base_footprint");
 
-                    if (cart_frame_exists && rb1_base_footprint_exists)
+                    while (!cart_approach_complete_)
                     {
-                        final_approach_ready_ = true;
-                    }
-                    */
-                    //rclcpp::sleep_for(std::chrono::milliseconds(3000));
-                    final_approach_ready_ = true;
-
-                    if (cart_approach_complete_)
-                    {
-                        float velocity = robo_math_helper_.calculate_vel_by_distance(0.3, 1);
-                        auto msg = geometry_msgs::msg::Twist();
-                        msg.linear.x = velocity;
-                        cmd_publisher_->publish(msg);
+                        move_to_cart();
                     }
 
-                    while (!elevator_ready_)
-                    {}
+                    center_under_cart();
 
                     response->complete = true;
                 }
@@ -119,53 +91,48 @@ private:
             }
         }
 
-    void timer_callback_1()
+    void move_to_cart()
     {
-        if (final_approach_ready_)
-        {
-            RCLCPP_INFO(this->get_logger(), "timer 1 entered");
             std::shared_ptr<Coordinates> rb1 = tf_manager_->get_tf_coords_parent_to_child("odom", "robot_base_footprint");
             std::shared_ptr<Coordinates> cart = tf_manager_->get_tf_coords_parent_to_child("odom", "cart_frame");
 
-            if (!rb1 || !cart) {return;}
+            if (!rb1 || !cart) 
+            {
+                RCLCPP_INFO(this->get_logger(), "Either rb1 or cart frame couldn't be located");
+                return;
+            }
 
             double dx = cart->x_ - rb1->x_;
             double dy = cart->y_ - rb1->y_;
             double distance = std::sqrt(dx*dx + dy*dy);
-            RCLCPP_INFO(this->get_logger(), "Initial Distance: %.2f", distance);
-
-            if (distance != 0.0) 
+            if (distance > 0.1) 
             {
-                RCLCPP_INFO(this->get_logger(), "Distance: %.2f", distance);
                 auto msg = tf_manager_->move_subject_towards_target(rb1, cart);
                 cmd_publisher_->publish(msg);
             }
             else 
             {
-                timer_1_->cancel();
                 auto msg = geometry_msgs::msg::Twist();
                 msg.linear.x = 0.0;
                 msg.angular.z = 0.0;
                 cmd_publisher_->publish(msg);
-
                 cart_approach_complete_ = true;
             }
-        }
     }
 
-    void timer_callback_2()
+    void center_under_cart()
     {
-        if (cart_approach_complete_)
-        {
-            timer_2_->cancel();
-            float velocity = robo_math_helper_.calculate_vel_by_distance(0.3, 1);
-            auto msg = geometry_msgs::msg::Twist();
-            msg.linear.x = velocity;
-            cmd_publisher_->publish(msg);
+        float velocity = robo_math_helper_.calculate_vel_by_distance(0.3, 5);
+        auto start = std::chrono::steady_clock::now();
+        auto duration = std::chrono::seconds(5); // run for 1 second
 
-            elevator_ready_ = true;
+        while (std::chrono::steady_clock::now() - start < duration)
+        {
+            auto msg = geometry_msgs::msg::Twist();
+            msg.linear.x = velocity * 2.5;
+            cmd_publisher_->publish(msg);
         }
-    }
+}
     
     std::vector<LegData> detect_shelf_legs(sensor_msgs::msg::LaserScan laser_data)
         {
@@ -214,12 +181,24 @@ private:
         void create_cart_frame(std::vector<LegData> legs)
         {
             auto midpoint = robo_math_helper_.find_midpoint(legs[0].point, legs[1].point);
-            
+
+            // 1. First, transform the midpoint from laser frame → odom frame
+            geometry_msgs::msg::PointStamped point_in_laser;
+            point_in_laser.header.frame_id = "robot_front_laser_base_link";
+            point_in_laser.header.stamp = this->now();
+            point_in_laser.point.x = midpoint.x_;
+            point_in_laser.point.y = midpoint.y_;
+            point_in_laser.point.z = 0.0;
+
+            auto point_in_odom = tf_manager_->transform_point(point_in_laser, "odom");
+            if (!point_in_odom) return;
+
+            // 2. Publish static transform with odom as parent
             Transform new_transform;
-            new_transform.translation_x_ = midpoint.x_;
-            new_transform.translation_y_ = midpoint.y_;
+            new_transform.translation_x_ = point_in_odom->point.x;
+            new_transform.translation_y_ = point_in_odom->point.y;
             new_transform.translation_z_ = 0;
-            new_transform.parent_frame_ = "robot_front_laser_base_link";
+            new_transform.parent_frame_ = "odom";  // world-fixed
             new_transform.child_frame_ = "cart_frame";
             new_transform.roll_ = 0;
             new_transform.pitch_ = 0;

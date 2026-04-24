@@ -11,6 +11,7 @@
 #include "rclcpp/rclcpp.hpp"
 #include "geometry_msgs/msg/pose.hpp"
 #include "tf2_ros/transform_listener.h"
+#include <tf2_geometry_msgs/tf2_geometry_msgs.hpp>
 
 struct Coordinates
 {
@@ -87,6 +88,8 @@ class TfManager
         geometry_msgs::msg::Twist move_subject_towards_target(std::shared_ptr<Coordinates> subject, std::shared_ptr<Coordinates> target);
 
         bool check_if_tf_exists(const std::string &parent_frame, const std::string &child_frame);
+  
+        std::optional<geometry_msgs::msg::PointStamped> transform_point(const geometry_msgs::msg::PointStamped &point, const std::string &target_frame);
 
     private:
         tf2_ros::StaticTransformBroadcaster static_broadcaster_;
