@@ -24,6 +24,10 @@ add_library(diff_drive_manager
   src/diff_drive_manager.cpp
 )
 
+# allows library to link to a shared library.
+# static libraries linked into a shared object must be complied with -fPIC
+target_compile_options(diff_drive_manager PRIVATE -fPIC) 
+
 ament_target_dependencies(diff_drive_manager
   rclcpp
   geometry_msgs
@@ -43,6 +47,8 @@ add_library(laser_manager
   src/laser_manager.cpp
 )
 
+target_compile_options(laser_manager PRIVATE -fPIC)
+
 ament_target_dependencies(laser_manager
   rclcpp
   sensor_msgs
@@ -61,6 +67,8 @@ target_include_directories(laser_manager
 add_library(odom_manager
   src/odom_manager.cpp
 )
+
+target_compile_options(odom_manager PRIVATE -fPIC)
 
 ament_target_dependencies(odom_manager
   rclcpp
@@ -82,6 +90,8 @@ add_library(lifecycle_manager
   src/lifecycle_manager.cpp
 )
 
+target_compile_options(lifecycle_manager PRIVATE -fPIC)
+
 ament_target_dependencies(lifecycle_manager
   rclcpp
   rclcpp_lifecycle
@@ -101,6 +111,8 @@ add_library(service_manager
   src/ros2_service_manager.cpp
 )
 
+target_compile_options(service_manager PRIVATE -fPIC)
+
 ament_target_dependencies(service_manager
 	rclcpp
 )
@@ -118,6 +130,8 @@ add_library(cpp_helper
   src/cpp_helper.cpp
 )
 
+target_compile_options(cpp_helper PRIVATE -fPIC)
+
 ament_target_dependencies(cpp_helper
 )
 
@@ -133,6 +147,8 @@ target_include_directories(cpp_helper
 add_library(robo_math
   src/robo_math.cpp
 )
+
+target_compile_options(robo_math PRIVATE -fPIC)
 
 ament_target_dependencies(robo_math
 )
@@ -150,6 +166,8 @@ add_library(tf_manager
   src/tf_manager.cpp
 )
 
+target_compile_options(tf_manager PRIVATE -fPIC)
+
 ament_target_dependencies(tf_manager
 	rclcpp
 	tf2_ros
@@ -162,8 +180,6 @@ target_include_directories(tf_manager
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
 )
-
-
 
 
 # =========================
