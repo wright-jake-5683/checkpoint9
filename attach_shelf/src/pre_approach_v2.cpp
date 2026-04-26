@@ -208,7 +208,7 @@ class PreApproachNode : public rclcpp_lifecycle::LifecycleNode {
                 request->laser_data = laser_data_;
                 std::chrono::seconds time_out = 60s;
                 auto future_result = client_->async_send_request(request);
-                auto future_status = service_manager_->wait_for_result(future_result, time_out);
+                auto future_status = service_manager_->wait_for_result_blocking(future_result, time_out);
 
                 if (future_status != std::future_status::ready) {
                     RCLCPP_ERROR(this->get_logger(), "Server time out while final approach service: %s", client_->get_service_name());

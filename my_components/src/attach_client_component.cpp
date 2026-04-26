@@ -21,7 +21,13 @@ namespace my_components {
 
         RCLCPP_INFO(this->get_logger(), "%s client ready!", service_name.c_str());
 
-        timer_ = this->create_wall_timer(2s, std::bind(&AttachClient::final_approach, this));
+        laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
+            "/scan",
+            10,
+            std::bind(&AttachClient::laser_callback, this, std::placeholders::_1)
+        );
+
+        timer_ = this->create_wall_timer(5s, std::bind(&AttachClient::final_approach, this));
     }
 
     void AttachClient::laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
@@ -33,7 +39,7 @@ namespace my_components {
     {
         // Cancel the timer so this only fires once
         timer_->cancel();
-
+        
         auto request = std::make_shared<Loading::Request>();
         request->attach_to_shelf = true;
         request->laser_data = laser_data_;

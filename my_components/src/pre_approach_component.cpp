@@ -12,6 +12,17 @@ namespace my_components
     PreApproach::PreApproach(const rclcpp::NodeOptions & options)
     : Node("pre_approach_node", options)
     {   
+
+        // Defer everything until after the node is fully loaded
+        init_timer_ = this->create_wall_timer(
+            2s, // give simulation time to start publishing
+            std::bind(&PreApproach::initialize, this));
+    }
+
+    void PreApproach::initialize()
+    {
+        init_timer_->cancel(); // one-shot
+
         pub_ = create_publisher<geometry_msgs::msg::Twist>("/diffbot_base_controller/cmd_vel_unstamped", 10);
 
         laser_sub_ = this->create_subscription<sensor_msgs::msg::LaserScan>(
@@ -34,6 +45,7 @@ namespace my_components
 
     void PreApproach::laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg)
     {
+        if (!subscription_enabled_) return;
         front_laser_reading_ = laser_helper_->read_front_laser(msg);
         RCLCPP_INFO(this->get_logger(), "Laser Reading: %.2f", front_laser_reading_);
     }
@@ -72,6 +84,7 @@ namespace my_components
                     state_ = State::DONE;
                     RCLCPP_INFO(this->get_logger(), "Task Complete");
                     timer_->cancel();
+                    subscription_enabled_ = false;
                 }
                 break;
 

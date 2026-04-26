@@ -31,17 +31,16 @@ namespace my_components {
         public:
         COMPOSITION_PUBLIC
         explicit AttachServer(const rclcpp::NodeOptions &options);
-        void init();
-
-        protected:
 
         private:
+        void initialize();
         void service_callback(const std::shared_ptr<Loading::Request> request, std::shared_ptr<Loading::Response> response);
         std::vector<LegData> detect_shelf_legs(sensor_msgs::msg::LaserScan laser_data);
         void create_cart_frame(std::vector<LegData> legs);
         void move_to_cart();
         void center_under_cart();
 
+        rclcpp::TimerBase::SharedPtr init_timer_;
         std::string service_name_;
         rclcpp::Service<Loading>::SharedPtr service_;
         LaserManager laser_helper_;

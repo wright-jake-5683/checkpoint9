@@ -1,7 +1,7 @@
 import launch
 from launch_ros.actions import ComposableNodeContainer
 from launch_ros.descriptions import ComposableNode
-
+from launch.actions import SetEnvironmentVariable
 
 def generate_launch_description():
     """Generate launch description with multiple components."""
@@ -14,13 +14,19 @@ def generate_launch_description():
                 ComposableNode(
                     package='my_components',
                     plugin='my_components::PreApproach',
-                    name='pre_approach'),
+                    name='pre_approach',
+                    parameters=[{'use_sim_time': True}]),
                 ComposableNode(
                     package='my_components',
                     plugin='my_components::AttachServer',
-                    name='attach_server'),
+                    name='attach_server',
+                    parameters=[{'use_sim_time': True}])
             ],
             output='screen',
     )
 
-    return launch.LaunchDescription([container])
+    return launch.LaunchDescription([
+        SetEnvironmentVariable('RCUTILS_COLORIZED_OUTPUT', '1'),
+        SetEnvironmentVariable('RCUTILS_CONSOLE_OUTPUT_FORMAT', '[{severity}] [{name}]: {message}'),
+        container
+    ])

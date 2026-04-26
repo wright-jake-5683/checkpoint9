@@ -30,10 +30,12 @@ namespace my_components
         void odom_callback(const nav_msgs::msg::Odometry::SharedPtr msg);
         void laser_callback(const sensor_msgs::msg::LaserScan::SharedPtr msg);
         void to_go_position();
+        void initialize();
 
         private:
         rclcpp::Publisher<geometry_msgs::msg::Twist>::SharedPtr pub_;
         rclcpp::TimerBase::SharedPtr timer_;
+        rclcpp::TimerBase::SharedPtr init_timer_;
         std::shared_ptr<DiffDriveManager> diff_drive_helper_;
         std::shared_ptr<LaserManager> laser_helper_;
         std::shared_ptr<OdomManager> odom_helper_;
@@ -45,6 +47,7 @@ namespace my_components
         bool destination_reached_ = false;
         float front_laser_reading_;
         RPY rpy_;
+        bool subscription_enabled_ = true;
     };
 }  // namespace composition
 
